@@ -1,9 +1,9 @@
 ### USAGE
 - base url:
-  https://vidsrc-api-two.app
+  https://your-vercel-domain
 
 - endpoint:
-  - `/vidsrc/{db_id}`
+  - `/vidsrc/{tmdb_id}`
 
 - parameters:
   - `s` - season (series only)
@@ -11,12 +11,12 @@
 
 ### EXAMPLE MOVIE
 ```
-https://vidsrc-api-two.app/vidsrc/916224
+https://your-vercel-domain/vidsrc/916224
 ```
 
 ### EXAMPLE SHOW
 ```
-https://vidsrc-api-two.app/vidsrc/1429?s=1&e=1
+https://your-vercel-domain/vidsrc/1429?s=1&e=1
 ```
 
 ### Vercel
