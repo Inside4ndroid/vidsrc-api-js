@@ -5,11 +5,19 @@ import randomUserAgent from 'random-useragent';
 import { vidsrcBase, vidplayBase } from "./constants.js";
 
 export async function getVidsrctoStreams(sourcesId) {
+
+    let vidplay;
+
     const sources = await getVidsrcSources(sourcesId);
 
     console.log(sources);
 
-    const vidplay = sources.result.find((v) => v.title.toLowerCase() === 'f2cloud');
+    try {
+        vidplay = sources.result.find((v) => v.title.toLowerCase() === 'f2cloud');
+    } catch (error) {
+        return { data: sources };
+    }
+
 
     if (!vidplay) {
         const data = {
@@ -45,13 +53,13 @@ export async function getVidsrctoStreams(sourcesId) {
         return { data: data };
     } else {
         const data = {
-        file: source,
-        sub: subtitles
-    };
-    return { data: data };
+            file: source,
+            sub: subtitles
+        };
+        return { data: data };
     }
 
-    
+
 
 }
 
@@ -71,9 +79,19 @@ export async function getVidsrcSourcesId(tmdbId, seasonNumber, episodeNumber) {
 }
 
 async function getVidsrcSources(sourceId) {
-    const data = await (await fetch(`${vidsrcBase}/ajax/embed/episode/${sourceId}/sources`)).json();
+    try {
+        const response = await fetch(`${vidsrcBase}/ajax/embed/episode/${sourceId}/sources`);
+        if (!response.ok) {
+            return 'No Sources Found';
+        } else {
+            const data = await response.json();
+            return data;
+        }
 
-    return data;
+    } catch (error) {
+        console.error("Error fetching or parsing JSON:", error);
+        return null; // or handle the error as needed
+    }
 }
 
 async function getVidsrcSourceDetails(sourceId) {
