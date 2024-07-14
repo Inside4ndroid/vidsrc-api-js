@@ -81,11 +81,19 @@ export async function getVidsrcSourcesId(tmdbId, seasonNumber, episodeNumber) {
 async function getVidsrcSources(sourceId) {
     try {
         const response = await fetch(`${vidsrcBase}/ajax/embed/episode/${sourceId}/sources`);
+
         if (!response.ok) {
             return 'No Sources Found';
-        } else {
+        }
+
+        const contentType = response.headers.get("content-type");
+        if (contentType && contentType.includes("application/json")) {
             const data = await response.json();
             return data;
+        } else {
+            const text = await response.text();
+            console.error("Unexpected content type or response:", text);
+            return 'Unexpected content type or response';
         }
 
     } catch (error) {
