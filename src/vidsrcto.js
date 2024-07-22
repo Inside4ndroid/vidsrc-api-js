@@ -1,113 +1,132 @@
-import { load } from "cheerio";
-import { decode } from "html-entities";
-import randomUserAgent from 'random-useragent';
+import fetch from 'node-fetch';
+import { getKeys } from './getKeys.js';
 
-import { vidsrcBase, vidplayBase } from "./constants.js";
+const keys = await getKeys();
 
-export async function getVidsrctoStreams(sourcesId) {
-
-    let vidplay;
-
-    const sources = await getVidsrcSources(sourcesId);
-
-    console.log(sources);
-
-    try {
-        vidplay = sources.result.find((v) => v.title.toLowerCase() === 'f2cloud');
-    } catch (error) {
-        return { data: sources };
-    }
-
-
-    if (!vidplay) {
-        const data = {
-            file: sources
-        };
-        return { data: data };
-    }
-
-    const vidplayLink = await getVidsrcSourceDetails(vidplay.id);
-
-    const key = await encodeId(vidplayLink.split('/e/')[1].split('?')[0]);
-    const dataFutoken = await getFutoken(key, vidplayLink);
-
-    const subtitles = await getSubtitles(vidplayLink);
-
-    const response = await (await fetch(`https://vidplay.online/mediainfo/${dataFutoken}?${vidplayLink.split('?')[1]}&autostart=true`, {
-        headers: {
-            "Origin": generateRandomIp(),
-            "Referer": vidplayLink,
-            "Host": "vidplay.online",
-            "User-Agent": randomUserAgent.getRandom()
-        }
-    })).json();
-
-    const result = response.result;
-    const source = result.sources?.[0]?.file;
-
-    if (!source) {
-        const data = {
-            file: null,
-            sub: subtitles
-        };
-        return { data: data };
-    } else {
-        const data = {
-            file: source,
-            sub: subtitles
-        };
-        return { data: data };
-    }
-
-
-
+function rc4(key, inp) {
+  let e = [];
+  e[4] = [];
+  e[3] = 0;
+  let i = 0;
+  e[8] = "";
+  for (i = 0; i < 256; i++) {
+    e[4][i] = i;
+  }
+  for (i = 0; i < 256; i++) {
+    e[3] = (e[3] + e[4][i] + key.charCodeAt(i % key.length)) % 256;
+    e[2] = e[4][i];
+    e[4][i] = e[4][e[3]];
+    e[4][e[3]] = e[2];
+  }
+  i = 0;
+  e[3] = 0;
+  let j = 0;
+  for (j = 0; j < inp.length; j++) {
+    i = (i + 1) % 256;
+    e[3] = (e[3] + e[4][i]) % 256;
+    e[2] = e[4][i];
+    e[4][i] = e[4][e[3]];
+    e[4][e[3]] = e[2];
+    e[8] += String.fromCharCode(inp.charCodeAt(j) ^ e[4][(e[4][i] + e[4][e[3]]) % 256]);
+  }
+  return e[8];
 }
 
-export async function getVidsrcSourcesId(tmdbId, seasonNumber, episodeNumber) {
-    const type = seasonNumber && episodeNumber ? "tv" : "movie";
-    const url = `${vidsrcBase}/embed/${type}/${tmdbId}${type === "tv" ? `/${seasonNumber}/${episodeNumber}` : ''}`
-    try {
-        const data = await (await fetch(url)).text();
 
-        const doc = load(data);
-        const sourcesCode = doc('a[data-id]').attr('data-id');
-
-        return sourcesCode;
-    } catch (err) {
-        return;
-    }
+function enc(inp) {
+  inp = encodeURIComponent(inp);
+  const e = rc4(keys[0], inp);
+  const out = btoa(e).replace(/\//g, "_").replace(/\+/g, '-');
+  return out;
 }
 
-async function getVidsrcSources(sourceId) {
-    try {
-        const response = await fetch(`${vidsrcBase}/ajax/embed/episode/${sourceId}/sources`);
-
-        if (!response.ok) {
-            return 'No Sources Found';
-        }
-
-        const contentType = response.headers.get("content-type");
-        if (contentType && contentType.includes("application/json")) {
-            const data = await response.json();
-            return data;
-        } else {
-            const text = await response.text();
-            console.error("Unexpected content type or response:", text);
-            return 'Unexpected content type or response';
-        }
-
-    } catch (error) {
-        console.error("Error fetching or parsing JSON:", error);
-        return null; // or handle the error as needed
-    }
+function embed_enc(inp) {
+  inp = encodeURIComponent(inp);
+  const e = rc4(keys[1], inp);
+  const out = btoa(e).replace(/\//g, "_").replace(/\+/g, '-');
+  return out;
 }
 
-async function getVidsrcSourceDetails(sourceId) {
-    const data = await (await fetch(`${vidsrcBase}/ajax/embed/source/${sourceId}`)).json();
+function h_enc(inp) {
+  inp = encodeURIComponent(inp);
+  const e = rc4(keys[2], inp);
+  const out = btoa(e).replace(/\//g, "_").replace(/\+/g, '-');
+  return out;
+}
 
-    const encryptedUrl = data.result.url;
-    const decryptedUrl = decryptSourceUrl(encryptedUrl);
-    return decodeURIComponent(decryptedUrl);
+function dec(inp) {
+  const i = atob((inp).replace(/_/g, "/").replace(/-/g, "+"));
+  let e = rc4(keys[3], i);
+  e = decodeURIComponent(e);
+  return e;
+}
+
+function embed_dec(inp) {
+  const i = atob((inp).replace(/_/g, "/").replace(/-/g, "+"));
+  let e = rc4(keys[4], i);
+  e = decodeURIComponent(e);
+  return e;
+}
+
+async function episode(data_id) {
+  let url = `https://vidsrc.to/ajax/embed/episode/${data_id}/sources?token=${encodeURIComponent(enc(data_id))}`;
+  let resp = await (await fetch(url)).json();
+
+  console.log(resp);
+
+  let f2cloud_id = resp['result'][0]['id'];
+  url = `https://vidsrc.to/ajax/embed/source/${f2cloud_id}?token=${encodeURIComponent(enc(f2cloud_id))}`;
+  resp = await (await fetch(url)).json();
+
+  console.log(resp);
+
+  let f2cloud_url = resp['result']['url'];
+  let f2cloud_url_dec = dec(f2cloud_url);
+
+  console.log(f2cloud_url_dec);
+
+  const subtitles = await getSubtitles(f2cloud_url_dec);
+
+  url = new URL(f2cloud_url_dec);
+  let embed_id = url.pathname.split("/")[2];
+  let h = h_enc(embed_id);
+  let mediainfo_url = `https://vid2v11.site/mediainfo/${embed_enc(embed_id)}${url.search}&ads=0&h=${encodeURIComponent(h)}`;
+  resp = await (await fetch(mediainfo_url)).json();
+
+  console.log(resp);
+
+  let playlist = embed_dec(resp['result']);
+  if (typeof playlist === 'string') {
+    playlist = JSON.parse(playlist);
+  }
+  
+  const source = playlist.sources?.[0]?.file;
+
+  if (!source) {
+      const data = {
+          file: null,
+          sub: subtitles
+      };
+      return { data: data };
+  } else {
+      const data = {
+          file: source,
+          sub: subtitles
+      };
+      return { data: data };
+  }
+}
+
+export async function getmovie(id) {
+  let resp = await (await fetch(`https://vidsrc.to/embed/movie/${id}`)).text();
+  let data_id = (/data-id="(.*?)"/g).exec(resp)[1];
+  return episode(data_id);
+}
+
+export async function getserie(id, s, e) {
+  let resp = await (await fetch(`https://vidsrc.to/embed/tv/${id}/${s}/${e}`)).text();
+  let data_id = (/data-id="(.*?)"/g).exec(resp)[1];
+  return episode(data_id);
 }
 
 async function getSubtitles(vidplayLink) {
@@ -122,91 +141,4 @@ async function getSubtitles(vidplayLink) {
 
         return subtitles;
     }
-}
-
-function adecode(str) {
-    const keyBytes = Buffer.from('WXrUARXb1aDLaZjI', 'utf-8');
-    let j = 0;
-    const s = Buffer.from(Array(256).fill().map((_, i) => i));
-
-    for (let i = 0; i < 256; i++) {
-        j = (j + s[i] + keyBytes[i % keyBytes.length]) & 0xff;
-        [s[i], s[j]] = [s[j], s[i]];
-    }
-
-    const decoded = Buffer.alloc(str.length);
-    let i = 0;
-    let k = 0;
-
-    for (let index = 0; index < str.length; index++) {
-        i = (i + 1) & 0xff;
-        k = (k + s[i]) & 0xff;
-        [s[i], s[k]] = [s[k], s[i]];
-        const t = (s[i] + s[k]) & 0xff;
-        decoded[index] = str[index] ^ s[t];
-    }
-
-    return decoded;
-}
-
-function decodeBase64UrlSafe(s) {
-    const standardizedInput = s.replace('_', '/').replace('-', '+');
-    const binaryData = Buffer.from(standardizedInput, 'base64');
-
-    return Buffer.from(binaryData);
-}
-
-function decryptSourceUrl(sourceUrl) {
-    const encoded = decodeBase64UrlSafe(sourceUrl);
-    const decoded = adecode(encoded);
-
-    const decodedText = decoded.toString('utf-8');
-    return decode(decodedText);
-}
-
-async function encodeId(v_id) {
-    const resp = await (await fetch('https://raw.githubusercontent.com/Inside4ndroid/vidkey-js/main/keys.json')).json();
-    const [key1, key2] = resp;
-    const decoded_id = keyPermutation(key1, v_id).toString('latin1');
-    const encoded_result = keyPermutation(key2, decoded_id).toString('latin1');
-    const encoded_base64 = btoa(encoded_result);
-    return encoded_base64.replace('/', '_');
-}
-
-async function getFutoken(key, url) {
-    const response = await (await fetch(`${vidplayBase}/futoken`, { headers: { "Referer": `${url}/` } })).text();
-    const fuKey = response.match(/var\s+k\s*=\s*'([^']+)'/)[1];
-    const fuToken = `${fuKey},${Array.from({ length: key.length }, (_, i) => (fuKey.charCodeAt(i % fuKey.length) + key.charCodeAt(i)).toString()).join(',')}`;
-    return fuToken;
-}
-
-const generateRandomIp = () => {
-    return (Math.floor(Math.random() * 255) + 1) + "." + (Math.floor(Math.random() * 255)) + "." + (Math.floor(Math.random() * 255)) + "." + (Math.floor(Math.random() * 255));
-}
-
-function keyPermutation(key, data) {
-    var state = Array.from(Array(256).keys());
-    var index_1 = 0;
-    for (var i = 0; i < 256; i++) {
-        index_1 = ((index_1 + state[i]) + key.charCodeAt(i % key.length)) % 256;
-        var temp = state[i];
-        state[i] = state[index_1];
-        state[index_1] = temp;
-    }
-    var index_1 = 0;
-    var index_2 = 0;
-    var final_key = '';
-    for (var char = 0; char < data.length; char++) {
-        index_1 = (index_1 + 1) % 256;
-        index_2 = (index_2 + state[index_1]) % 256;
-        var temp = state[index_1];
-        state[index_1] = state[index_2];
-        state[index_2] = temp;
-        if (typeof data[char] === 'string') {
-            final_key += String.fromCharCode(data[char].charCodeAt(0) ^ state[(state[index_1] + state[index_2]) % 256]);
-        } else if (typeof data[char] === 'number') {
-            final_key += String.fromCharCode(data[char] ^ state[(state[index_1] + state[index_2]) % 256]);
-        }
-    }
-    return final_key;
 }

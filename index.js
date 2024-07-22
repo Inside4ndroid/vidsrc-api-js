@@ -1,6 +1,7 @@
 import express from "express";
-import { getVidsrcSourcesId, getVidsrctoStreams } from "./src/vidsrcto.js";
 import { port } from "./src/constants.js";
+import { getmovie, getserie } from "./src/vidsrcto.js";
+
 
 const app = express()
 
@@ -20,18 +21,29 @@ app.get('/vidsrc/:tmdbId', async (req, res) => {
     const season = req.query.s;
     const episode = req.query.e;
 
-    const sourcesId = await getVidsrcSourcesId(id, season, episode);
-    const response = await getVidsrctoStreams(sourcesId);
-    const responseData = response.data;
-    if (responseData.file === null) {
-        res.status(404).send({
-            status: 404,
-            return: "Oops reached rate limit of this api"
-        })
+    if (season && episode) {
+        const response = await getserie(id, season, episode);
+        if (!response) {
+            res.status(404).send({
+                status: 404,
+                return: "Oops reached rate limit of this api"
+            })
+        } else {
+            res.status(200).json([response]);
+        }
     } else {
+        const response = await getmovie(id);
 
-        res.status(200).json([response]);
+        if (!response) {
+            res.status(404).send({
+                status: 404,
+                return: "Oops reached rate limit of this api"
+            })
+        } else {
+            res.status(200).json([response]);
+        }
     }
+
 });
 
 app.listen(port, () => {
