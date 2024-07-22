@@ -1,4 +1,3 @@
-import fetch from 'node-fetch';
 import { getKeys } from './getKeys.js';
 
 const keys = await getKeys();

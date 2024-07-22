@@ -1,5 +1,3 @@
-import fetch from "node-fetch";
-
 export const getKeys = async () => {
   const url = "https://raw.githubusercontent.com/Ciarands/vidsrc-keys/main/keys.json";
 
@@ -14,7 +12,6 @@ export const getKeys = async () => {
 
     if (keys && keys.encrypt && keys.decrypt) {
       const allKeys = [...keys.encrypt, ...keys.decrypt];
-      console.log("All keys:", allKeys);
       return allKeys;
     } else {
       console.error("Keys object is empty or malformed");

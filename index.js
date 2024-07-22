@@ -1,7 +1,7 @@
 import express from "express";
-import { port } from "./src/constants.js";
 import { getmovie, getserie } from "./src/vidsrcto.js";
 
+const port = 3000;
 
 const app = express()
 
