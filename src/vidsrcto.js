@@ -71,18 +71,12 @@ async function episode(data_id) {
   let url = `https://vidsrc.to/ajax/embed/episode/${data_id}/sources?token=${encodeURIComponent(enc(data_id))}`;
   let resp = await (await fetch(url)).json();
 
-  console.log(resp);
-
   let f2cloud_id = resp['result'][0]['id'];
   url = `https://vidsrc.to/ajax/embed/source/${f2cloud_id}?token=${encodeURIComponent(enc(f2cloud_id))}`;
   resp = await (await fetch(url)).json();
 
-  console.log(resp);
-
   let f2cloud_url = resp['result']['url'];
   let f2cloud_url_dec = dec(f2cloud_url);
-
-  console.log(f2cloud_url_dec);
 
   const subtitles = await getSubtitles(f2cloud_url_dec);
 
@@ -91,8 +85,6 @@ async function episode(data_id) {
   let h = h_enc(embed_id);
   let mediainfo_url = `https://vid2v11.site/mediainfo/${embed_enc(embed_id)}${url.search}&ads=0&h=${encodeURIComponent(h)}`;
   resp = await (await fetch(mediainfo_url)).json();
-
-  console.log(resp);
 
   let playlist = embed_dec(resp['result']);
   if (typeof playlist === 'string') {
