@@ -126,7 +126,7 @@ export async function getmovie(id) {
 }
 
 export async function getserie(id, s, e) {
-  let resp = await (await fetch(`proxy/https://vidsrc.to/embed/tv/${id}/${s}/${e}`)).text();
+  let resp = await (await fetch(`https://vidsrc.to/embed/tv/${id}/${s}/${e}`)).text();
   let data_id = (/data-id="(.*?)"/g).exec(resp)[1];
   return episode(data_id);
 }
