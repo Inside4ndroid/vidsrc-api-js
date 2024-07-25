@@ -110,7 +110,7 @@ async function episode(data_id) {
 
 export async function getmovie(id) {
   
-  let resp = await (await fetch(`https://vidsrc.to/embed/movie/${id}`)).text();
+  let resp = await (await fetch(`https://vproxy-nine.vercel.app/proxy/https://vidsrc.to/embed/movie/${id}`)).text();
   
   // Validate the response content
   console.log(resp);
@@ -126,7 +126,7 @@ export async function getmovie(id) {
 }
 
 export async function getserie(id, s, e) {
-  let resp = await (await fetch(`https://vidsrc.to/embed/tv/${id}/${s}/${e}`)).text();
+  let resp = await (await fetch(`https://vproxy-nine.vercel.app/proxy/https://vidsrc.to/embed/tv/${id}/${s}/${e}`)).text();
   let data_id = (/data-id="(.*?)"/g).exec(resp)[1];
   return episode(data_id);
 }
