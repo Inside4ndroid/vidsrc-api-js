@@ -71,14 +71,19 @@ async function episode(data_id) {
   let url = `https://vidsrc.to/ajax/embed/episode/${data_id}/sources?token=${encodeURIComponent(enc(data_id))}`;
   let resp = await (await fetch(url)).json();
 
+  console.log(resp);
+
   let f2cloud_id = resp['result'][0]['id'];
+
+  console.log(f2cloud_id);
+
   url = `https://vidsrc.to/ajax/embed/source/${f2cloud_id}?token=${encodeURIComponent(enc(f2cloud_id))}`;
   resp = await (await fetch(url)).json();
 
   let f2cloud_url = resp['result']['url'];
   let f2cloud_url_dec = dec(f2cloud_url);
 
-  const subtitles = await getSubtitles(f2cloud_url_dec);
+  const subs = await getSubtitles(f2cloud_url_dec);
 
   url = new URL(f2cloud_url_dec);
   let embed_id = url.pathname.split("/")[2];
@@ -91,24 +96,24 @@ async function episode(data_id) {
     playlist = JSON.parse(playlist);
   }
   
-  const source = playlist.sources?.[0]?.file;
+  const sources = playlist.sources?.[0]?.file;
 
-  if (!source) {
+  if (!sources) {
       const data = {
-          file: null,
-          sub: subtitles
+          source: null,
+          subtitles: null
       };
-      return { data: data };
+      return { vidsrc: data };
   } else {
       const data = {
-          file: source,
-          sub: subtitles
+          source: sources,
+          subtitles: subs
       };
-      return { data: data };
+      return { vidsrc: data };
   }
 }
 
-export async function getmovie(id) {
+export async function getvmovie(id) {
   
   let resp = await (await fetch(`https://vidsrc.to/embed/movie/${id}`)).text();
   const match = (/data-id="(.*?)"/g).exec(resp);
@@ -116,7 +121,7 @@ export async function getmovie(id) {
   return episode(data_id);
 }
 
-export async function getserie(id, s, e) {
+export async function getvserie(id, s, e) {
   let resp = await (await fetch(`https://vidsrc.to/embed/tv/${id}/${s}/${e}`)).text();
   let data_id = (/data-id="(.*?)"/g).exec(resp)[1];
   return episode(data_id);

@@ -1,5 +1,7 @@
 import express from "express";
-import { getmovie, getserie } from "./src/vidsrcto.js";
+import { getvmovie, getvserie } from "./src/vidsrcto.js";
+import { getfmovie, getfserie } from "./src/filemoon.js";
+
 
 const port = 3000;
 
@@ -12,7 +14,7 @@ app.get('/', (req, res) => {
             movie: "/vidsrc/:movieTMDBid",
             show: "/vidsrc/:showTMDBid?s=seasonNumber&e=episodeNumber"
         },
-        author: "This api is developed and created by AijaZ"
+        author: "This api is developed and created by Inside4ndroid Studios"
     });
 });
 
@@ -21,29 +23,22 @@ app.get('/vidsrc/:tmdbId', async (req, res) => {
     const season = req.query.s;
     const episode = req.query.e;
 
-    if (season && episode) {
-        const response = await getserie(id, season, episode);
-        if (!response) {
-            res.status(404).send({
-                status: 404,
-                return: "Oops reached rate limit of this api"
-            })
+    try {
+        if (season && episode) {
+            const vidsrcresponse = await getvserie(id, season, episode);
+            const filemoonresponse = await getfserie(id, season, episode);
+            const combinedResponse = { ...filemoonresponse, ...vidsrcresponse };
+            res.status(200).json(combinedResponse);
         } else {
-            res.status(200).json([response]);
+            const vidsrcresponse = await getvmovie(id);
+            const filemoonresponse = await getfmovie(id);
+            const combinedResponse = { ...filemoonresponse, ...vidsrcresponse };
+            res.status(200).json(combinedResponse);
         }
-    } else {
-        const response = await getmovie(id);
-
-        if (!response) {
-            res.status(404).send({
-                status: 404,
-                return: "Oops reached rate limit of this api"
-            })
-        } else {
-            res.status(200).json([response]);
-        }
+    } catch (error) {
+        console.error('Error fetching data:', error);
+        res.status(500).json({ error: 'Failed to fetch data' });
     }
-
 });
 
 app.listen(port, () => {
