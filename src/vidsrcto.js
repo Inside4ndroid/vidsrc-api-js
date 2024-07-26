@@ -111,16 +111,7 @@ async function episode(data_id) {
 export async function getmovie(id) {
   
   let resp = await (await fetch(`https://vidsrc.to/embed/movie/${id}`)).text();
-  
-  // Validate the response content
-  console.log(resp);
-  
   const match = (/data-id="(.*?)"/g).exec(resp);
-  
-  if (!match) {
-    throw new Error('Failed to extract data-id from response');
-  }
-  
   let data_id = match[1];
   return episode(data_id);
 }
