@@ -8,7 +8,7 @@ const app = express()
 
 app.get('/', (req, res) => {
     res.status(200).json({
-        intro: "Welcome to the unofficial vidsrc provider: check the provider website @ https://${host}/ ",
+        intro: "Welcome to the unofficial vidsrc provider: check the provider website @ https://vidsrc.cc/ ",
         routes: {
             movie: "/vidsrc/:movieTMDBid",
             show: "/vidsrc/:showTMDBid?s=seasonNumber&e=episodeNumber"
@@ -35,10 +35,6 @@ app.get('/vidsrc/:tmdbId', async (req, res) => {
         res.status(500).json({ error: 'Failed to fetch data' });
     }
 });
-
-function wait(ms) {
-    return new Promise(resolve => setTimeout(resolve, ms));
-  }
 
 app.listen(port, () => {
     console.log(`Example app listening on port http://localhost:${port}`);
