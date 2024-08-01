@@ -1,142 +1,90 @@
-import { getKeys } from './getKeys.js';
+const HOST = 'vidsrc.cc';
 
-const keys = await getKeys();
+async function episode(data_id_1, data_id_2, type, s, e) {
+  if (type == 'movie') {
+    const url = `https://${HOST}/api/episodes/${data_id_2}/servers?id=${data_id_1}&type=${type}`;
+    let resp = await (await fetch(url)).json();
+    let id1 = resp['data'][0]['hash'];
+    let id2 = resp['data'][1]['hash'];
+    const url1 = `https://${HOST}/api/source/${id1}`;
+    console.log(url1);
+    const resp1 = await (await fetch(url1)).json();
+    const url2 = `https://${HOST}/api/source/${id2}`;
+    console.log(url2);
+    const resp2 = await (await fetch(url2)).json();
+    const result_1 = {
+      source1: resp1
+    };
+    const result_2 = {
+      source2: resp2
+    };
+    const combinedResponse = { ...result_1, ...result_2 };
+    console.log(`combinedResponse : ${JSON.stringify(combinedResponse, null, 2)}`);
+    return combinedResponse;
+  };
 
-function rc4(key, inp) {
-  let e = [];
-  e[4] = [];
-  e[3] = 0;
-  let i = 0;
-  e[8] = "";
-  for (i = 0; i < 256; i++) {
-    e[4][i] = i;
+  if (type == 'tv') {
+    const url = `https://${HOST}/api/episodes/${data_id_2}/servers?id=${data_id_1}&type=tv&season=${s}&episode=${e}`;
+    console.log(url);
+    let resp = await (await fetch(url)).json();
+    let id1 = resp['data'][0]['hash'];
+    let id2 = resp['data'][1]['hash'];
+    const url1 = `https://${HOST}/api/source/${id1}`;
+    console.log(url1);
+    const resp1 = await (await fetch(url1)).json();
+    const url2 = `https://${HOST}/api/source/${id2}`;
+    console.log(url2);
+    const resp2 = await (await fetch(url2)).json();
+    const result_1 = {
+      source1: resp1
+    };
+    const result_2 = {
+      source2: resp2
+    };
+    const combinedResponse = { ...result_1, ...result_2 };
+    console.log(`combinedResponse : ${JSON.stringify(combinedResponse, null, 2)}`);
+    return combinedResponse;
   }
-  for (i = 0; i < 256; i++) {
-    e[3] = (e[3] + e[4][i] + key.charCodeAt(i % key.length)) % 256;
-    e[2] = e[4][i];
-    e[4][i] = e[4][e[3]];
-    e[4][e[3]] = e[2];
-  }
-  i = 0;
-  e[3] = 0;
-  let j = 0;
-  for (j = 0; j < inp.length; j++) {
-    i = (i + 1) % 256;
-    e[3] = (e[3] + e[4][i]) % 256;
-    e[2] = e[4][i];
-    e[4][i] = e[4][e[3]];
-    e[4][e[3]] = e[2];
-    e[8] += String.fromCharCode(inp.charCodeAt(j) ^ e[4][(e[4][i] + e[4][e[3]]) % 256]);
-  }
-  return e[8];
-}
 
-
-function enc(inp) {
-  inp = encodeURIComponent(inp);
-  const e = rc4(keys[0], inp);
-  const out = btoa(e).replace(/\//g, "_").replace(/\+/g, '-');
-  return out;
-}
-
-function embed_enc(inp) {
-  inp = encodeURIComponent(inp);
-  const e = rc4(keys[1], inp);
-  const out = btoa(e).replace(/\//g, "_").replace(/\+/g, '-');
-  return out;
-}
-
-function h_enc(inp) {
-  inp = encodeURIComponent(inp);
-  const e = rc4(keys[2], inp);
-  const out = btoa(e).replace(/\//g, "_").replace(/\+/g, '-');
-  return out;
-}
-
-function dec(inp) {
-  const i = atob((inp).replace(/_/g, "/").replace(/-/g, "+"));
-  let e = rc4(keys[3], i);
-  e = decodeURIComponent(e);
-  return e;
-}
-
-function embed_dec(inp) {
-  const i = atob((inp).replace(/_/g, "/").replace(/-/g, "+"));
-  let e = rc4(keys[4], i);
-  e = decodeURIComponent(e);
-  return e;
-}
-
-async function episode(data_id) {
-  let url = `https://vidsrc.to/ajax/embed/episode/${data_id}/sources?token=${encodeURIComponent(enc(data_id))}`;
-  let resp = await (await fetch(url)).json();
-
-  console.log(resp);
-
-  let f2cloud_id = resp['result'][0]['id'];
-
-  console.log(f2cloud_id);
-
-  url = `https://vidsrc.to/ajax/embed/source/${f2cloud_id}?token=${encodeURIComponent(enc(f2cloud_id))}`;
-  resp = await (await fetch(url)).json();
-
-  let f2cloud_url = resp['result']['url'];
-  let f2cloud_url_dec = dec(f2cloud_url);
-
-  const subs = await getSubtitles(f2cloud_url_dec);
-
-  url = new URL(f2cloud_url_dec);
-  let embed_id = url.pathname.split("/")[2];
-  let h = h_enc(embed_id);
-  let mediainfo_url = `https://vid2v11.site/mediainfo/${embed_enc(embed_id)}${url.search}&ads=0&h=${encodeURIComponent(h)}`;
-  resp = await (await fetch(mediainfo_url)).json();
-
-  let playlist = embed_dec(resp['result']);
-  if (typeof playlist === 'string') {
-    playlist = JSON.parse(playlist);
-  }
-  
-  const sources = playlist.sources?.[0]?.file;
-
-  if (!sources) {
-      const data = {
-          source: null,
-          subtitles: null
-      };
-      return { vidsrc: data };
-  } else {
-      const data = {
-          source: sources,
-          subtitles: subs
-      };
-      return { vidsrc: data };
-  }
 }
 
 export async function getvmovie(id) {
-  
-  let resp = await (await fetch(`https://vidsrc.to/embed/movie/${id}`)).text();
-  const match = (/data-id="(.*?)"/g).exec(resp);
-  let data_id = match[1];
-  return episode(data_id);
+  console.log(`https://${HOST}/v2/embed/movie/${id}`);
+  let resp = await (await fetch(`https://${HOST}/v2/embed/movie/${id}`)).text();
+
+  let regex = /data-id="(.*?)"/g;
+  let matches = [];
+  let match;
+
+  while ((match = regex.exec(resp)) !== null) {
+    matches.push(match[1]);
+  }
+
+  if (matches.length >= 2) {
+    let data_id_1 = matches[0];
+    let data_id_2 = matches[1];
+    return await episode(data_id_1, data_id_2, 'movie');
+  } else {
+    throw new Error("Failed to find two data-id values in response.");
+  }
 }
 
 export async function getvserie(id, s, e) {
-  let resp = await (await fetch(`https://vidsrc.to/embed/tv/${id}/${s}/${e}`)).text();
-  let data_id = (/data-id="(.*?)"/g).exec(resp)[1];
-  return episode(data_id);
-}
+  console.log(`https://${HOST}/v2/embed/tv/${id}/${s}/${e}`);
+  let resp = await (await fetch(`https://${HOST}/v2/embed/tv/${id}/${s}/${e}`)).text();
+  let regex = /data-id="(.*?)"/g;
+  let matches = [];
+  let match;
 
-async function getSubtitles(vidplayLink) {
-    if (vidplayLink.includes('sub.info=')) {
-        const subtitleLink = vidplayLink.split('?sub.info=')[1].split('&')[0];
-        const subtitlesFetch = await (await fetch(decodeURIComponent(subtitleLink))).json();
+  while ((match = regex.exec(resp)) !== null) {
+    matches.push(match[1]);
+  }
 
-        const subtitles = subtitlesFetch.map(subtitle => ({
-            file: subtitle.file,
-            lang: subtitle.label
-        }));
-
-        return subtitles;
-    }
+  if (matches.length >= 2) {
+    let data_id_1 = matches[0];
+    let data_id_2 = matches[1];
+    return await episode(data_id_1, data_id_2, 'tv', s, e);
+  } else {
+    throw new Error("Failed to find two data-id values in response.");
+  }
 }

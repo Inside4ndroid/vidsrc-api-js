@@ -1,6 +1,5 @@
 import express from "express";
 import { getvmovie, getvserie } from "./src/vidsrcto.js";
-import { getfmovie, getfserie } from "./src/filemoon.js";
 
 
 const port = 3000;
@@ -9,7 +8,7 @@ const app = express()
 
 app.get('/', (req, res) => {
     res.status(200).json({
-        intro: "Welcome to the unofficial vidsrc provider: check the provider website @ https://vidsrc.to/ ",
+        intro: "Welcome to the unofficial vidsrc provider: check the provider website @ https://${host}/ ",
         routes: {
             movie: "/vidsrc/:movieTMDBid",
             show: "/vidsrc/:showTMDBid?s=seasonNumber&e=episodeNumber"
@@ -26,20 +25,20 @@ app.get('/vidsrc/:tmdbId', async (req, res) => {
     try {
         if (season && episode) {
             const vidsrcresponse = await getvserie(id, season, episode);
-            const filemoonresponse = await getfserie(id, season, episode);
-            const combinedResponse = { ...filemoonresponse, ...vidsrcresponse };
-            res.status(200).json(combinedResponse);
+            res.status(200).json(vidsrcresponse);
         } else {
             const vidsrcresponse = await getvmovie(id);
-            const filemoonresponse = await getfmovie(id);
-            const combinedResponse = { ...filemoonresponse, ...vidsrcresponse };
-            res.status(200).json(combinedResponse);
+            res.status(200).json(vidsrcresponse);
         }
     } catch (error) {
         console.error('Error fetching data:', error);
         res.status(500).json({ error: 'Failed to fetch data' });
     }
 });
+
+function wait(ms) {
+    return new Promise(resolve => setTimeout(resolve, ms));
+  }
 
 app.listen(port, () => {
     console.log(`Example app listening on port http://localhost:${port}`);
