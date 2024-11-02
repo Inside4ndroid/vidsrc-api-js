@@ -1,6 +1,5 @@
 import express from "express";
-import { getvmovie, getvserie } from "./src/vidsrcto.js";
-
+import { getvmovie } from "./src/vidsrcpro.js";
 
 const port = 3000;
 
@@ -8,7 +7,7 @@ const app = express()
 
 app.get('/', (req, res) => {
     res.status(200).json({
-        intro: "Welcome to the unofficial vidsrc provider: check the provider website @ https://vidsrc.cc/ ",
+        intro: "Welcome to the unofficial vidsrcPro provider",
         routes: {
             movie: "/vidsrc/:movieTMDBid",
             show: "/vidsrc/:showTMDBid?s=seasonNumber&e=episodeNumber"
@@ -24,7 +23,7 @@ app.get('/vidsrc/:tmdbId', async (req, res) => {
 
     try {
         if (season && episode) {
-            const vidsrcresponse = await getvserie(id, season, episode);
+            const vidsrcresponse = await getvmovie(id, season, episode);
             res.status(200).json(vidsrcresponse);
         } else {
             const vidsrcresponse = await getvmovie(id);
