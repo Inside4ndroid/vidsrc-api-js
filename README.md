@@ -67,6 +67,4 @@ You can self host by doing the following :
 3. `npm install`
 4. `npm run main`
 
-or you can deploy to vercel using the button below:
-
-[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https%3A%2F%2Fgithub.com%2FInside4ndroid%2Fvidsrc-api-js)
+"This no longer works on vercel due to the source blocking vercel requests but will work on your own server self hosted."
