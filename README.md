@@ -1,4 +1,4 @@
-# Unoffical Vidsrc (embed.su) API! 👋
+# Unoffical vidsrc (embed.su) API! 👋
 ## Sponsorship / Donations
 
 Your sponsorship is vital in helping me achieve this mission. With your support, I can:
@@ -44,18 +44,17 @@ TVSHOWS :
 The providers are currently :
 
 ```
-vidsrc
-asiaheroku
+embedsu
 ```
 
 ## Example Movie
 ```
-https://your-domain/vidsrc/916224
+https://your-domain/embedsu/916224
 ```
 
 ## Example Show
 ```
-https://your-domain/asiaheroku/1429?s=1&e=1
+https://your-domain/embedsu/1429?s=1&e=1
 ```
 
 ## Deployment
