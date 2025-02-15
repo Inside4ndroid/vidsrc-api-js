@@ -1,4 +1,4 @@
-# Unoffical Vidsrc API! 👋
+# Unoffical Vidsrc (embed.su) API! 👋
 ## Sponsorship / Donations
 
 Your sponsorship is vital in helping me achieve this mission. With your support, I can:
