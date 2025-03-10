@@ -1,5 +1,5 @@
 import express from "express";
-import { getEmbedSu } from "./src/embedsu.js";
+import { getEmbedSu } from "./src/extractors/embedsu.js";
 
 const port = 3000;
 
@@ -34,6 +34,11 @@ app.get('/embedsu/:tmdbId', async (req, res) => {
         res.status(500).json({ error: 'Failed to fetch data' });
     }
 });
+
+app.get('/vidsr-net/:tmdbid', async (req, res) => {
+
+
+})
 
 app.listen(port, () => {
     console.log(`Example app listening on port http://localhost:${port}`);

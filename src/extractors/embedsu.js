@@ -1,5 +1,5 @@
   import fetch from 'node-fetch';
-import { languageMap } from './languages.js';
+import { languageMap } from '../utils/languages.js';
 
 export async function getEmbedSu(tmdb_id, s, e) {
   const DOMAIN = "https://embed.su";
@@ -43,7 +43,7 @@ export async function getEmbedSu(tmdb_id, s, e) {
 
       const tracks = dataDirect.subtitles.map(sub => ({
         url: sub.file,
-        lang: languageMap[sub.label.split(' ')[0]] || sub.label
+        lang: sub.label.split('-')[0].trim()
       })).filter(track => track.lang);
 
       const requestDirectSize = await fetch(dataDirect.source, { headers, method: "GET" });
