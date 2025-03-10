@@ -32,13 +32,11 @@ export async function getEmbedSu(tmdb_id, s, e) {
     const subtitles = [];
 
     for (const item of secondDecode) {
-      if (item.name.toLowerCase() !== "viper") continue;
-
       const urlDirect = `${DOMAIN}/api/e/${item.hash}`;
       const dataDirect = await requestGet(urlDirect, {
         "Referer": DOMAIN,
         "User-Agent": headers['User-Agent'],
-        "Accept": "*/*"
+        "Origin": DOMAIN
       });
 
       if (!dataDirect.source) continue;
