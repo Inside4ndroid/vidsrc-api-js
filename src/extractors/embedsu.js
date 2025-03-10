@@ -1,5 +1,4 @@
-  import fetch from 'node-fetch';
-import { languageMap } from '../utils/languages.js';
+import fetch from 'node-fetch';
 
 export async function getEmbedSu(tmdb_id, s, e) {
   const DOMAIN = "https://embed.su";
