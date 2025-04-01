@@ -53,7 +53,7 @@ export async function getEmbedSu(tmdb_id, s, e) {
       const directQuality = patternSize.map(patternItem => {
         const sizeQuality = getSizeQuality(patternItem);
         let dURL = `${DOMAIN}${patternItem}`;
-        dURL = dURL.replace("embed.su/api/proxy/viper/", "").replace(".png", ".m3u8");
+        dURL = dURL.replace(".png", ".m3u8");
         return { file: dURL, type: 'hls', quality: `${sizeQuality}p`, lang: 'en' };
       });
 

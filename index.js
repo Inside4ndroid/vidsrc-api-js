@@ -35,11 +35,6 @@ app.get('/embedsu/:tmdbId', async (req, res) => {
     }
 });
 
-app.get('/vidsr-net/:tmdbid', async (req, res) => {
-
-
-})
-
 app.listen(port, () => {
     console.log(`Example app listening on port http://localhost:${port}`);
 });
