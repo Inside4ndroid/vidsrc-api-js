@@ -213,15 +213,33 @@ async function resolve(url, referer) {
 
                 await parseSubs(unpackedJS);
 
-                const fileRegex = /sources\s*:\s*\[\s*\{\s*file\s*:\s*"([^"]+)"/;
-                const matchUri = unpackedJS.match(fileRegex);
+                const docheck = unpackedJS.includes("\"hls2\":\"https");
 
-                if (matchUri && matchUri[1]) {
-                    return matchUri[1];
+                if (docheck) {
+                    const fileRegex = /links=.*hls2\":\"(.*?)\"};/;
+
+                    const matchUri = unpackedJS.match(fileRegex);
+
+                    if (matchUri && matchUri[1]) {
+                        return matchUri[1];
+                    } else {
+                        console.error("Could not find file URL in unpacked JS");
+                        return null;
+                    }
                 } else {
-                    console.error("Could not find file URL in unpacked JS");
-                    return null;
+                    const fileRegex = /sources\s*:\s*\[\s*\{\s*file\s*:\s*"([^"]+)"/;
+
+                    const matchUri = unpackedJS.match(fileRegex);
+
+                    if (matchUri && matchUri[1]) {
+                        return matchUri[1];
+                    } else {
+                        console.error("Could not find file URL in unpacked JS");
+                        return null;
+                    }
                 }
+
+
             } else {
                 console.error("JsUnpacker could not detect packed data in resolve response");
                 return null;
@@ -302,22 +320,52 @@ async function parseSubs(scriptstring) {
     }
 
     try {
-        const setupMatch = scriptstring.match(/jwplayer\([\s\S]*?\)\.setup\((\{[\s\S]*?\})\)/);
+        // First extract the links object from the script
+        const linksMatch = scriptstring.match(/var links\s*=\s*({[^;]*});/);
+        if (!linksMatch) {
+            console.error("Could not find links object in script");
+            return;
+        }
+
+        let linksStr = linksMatch[1]
+            .replace(/'/g, '"')  // Replace single quotes with double quotes for JSON
+            .replace(/([{,]\s*)([a-zA-Z0-9_$]+)(\s*:)/g, '$1"$2"$3');  // Ensure proper JSON keys
+
+        const links = JSON.parse(linksStr);
+        const videoUrl = links.hls2; // Use hls2 as fallback if hls4 doesn't exist
+
+        // Now extract the JWPlayer setup configuration
+        const setupMatch = scriptstring.match(/jwplayer\(["']vplayer["']\)\.setup\((\{[\s\S]*?\})\);[\s\S]*?$/);
         if (!setupMatch || !setupMatch[1]) {
+            console.error("Could not find JWPlayer setup configuration");
             return;
         }
 
         let setupStr = setupMatch[1];
 
-        setupStr = setupStr.replace(/\\'/g, "'");
-        setupStr = setupStr.replace(/'/g, '"');
-        setupStr = setupStr.replace(/([{,]\s*)([a-zA-Z0-9_$]+)(\s*:)/g, '$1"$2"$3');
-        setupStr = setupStr.replace(/,\s*([}\]])/g, '$1');
+        // Replace JavaScript expressions with actual values
+        setupStr = setupStr.replace(/links\.hls4\s*\|\|\s*links\.hls2/g, `"${videoUrl}"`);
+
+        // Clean the string for JSON parsing
+        setupStr = setupStr
+            .replace(/\\'/g, "'")
+            .replace(/([{,]\s*)([a-zA-Z0-9_$]+)(\s*:)/g, '$1"$2"$3')
+            .replace(/'/g, '"')
+            .replace(/,\s*([}\]])/g, '$1')
+            .replace(/"true"/g, 'true')
+            .replace(/"false"/g, 'false')
+            .replace(/"null"/g, 'null');
 
         let setupConfig;
         try {
             setupConfig = JSON.parse(setupStr);
         } catch (err) {
+            console.error("JSON parse error:", err, "in string:", setupStr);
+            return;
+        }
+
+        if (!setupConfig.tracks) {
+            console.log("No tracks found in setup configuration");
             return;
         }
 
