@@ -1,91 +1,182 @@
 import express from "express";
-import { getEmbedSu } from "./src/extractors/embedsu.js";
-import { getTwoEmbed } from "./src/extractors/2Embed.js";
+import { getMovie, getTv } from './src/api.js';
+import { getMovieFromTmdb, getTvFromTmdb } from './src/workers/tmdb.js';
+import cors from "cors";
 
-const port = 3000;
+const PORT = process.env.PORT;
+const app = express();
 
-const app = express()
+app.use(cors());
 
 app.get('/', (req, res) => {
     res.status(200).json({
-        INTRO: "Welcome to the unofficial vidsrcPro provider",
+        INTRO: "Welcome to the TMDB Embed API",
+        PROVIDERS: "2embed | embedsu | autoembed | vidsrcsu",
         ROUTES: {
-            movie: "/embedsu|2embed/:movieTMDBid",
-            show: "/embedsu|2embed/:showTMDBid?s=seasonNumber&e=episodeNumber",
-            all_movie: "/combined/:movieTMDBid",
-            all_show: "/combined/:showTMDBid?s=seasonNumber&e=episodeNumber"
+            movie: "/movie/{PROVIDER}/{TMDBID}",
+            show: "/tv/{PROVIDER}/{TMDBID}?s={SEASON}&e={EPISODE}",
+            all_movie_providers: "/movie/{TMDBID}",
+            all_show_providers: "/tv/{TMDBID}?s={SEASON}&e={EPISODE}"
         },
-        AUTHOR: "This api is developed and created by Inside4ndroid Studios"
+        INFORMATION: "This project is for educational purposes only. We do not host any kind of content. We provide only the links to already available content on the internet. We do not host, upload any videos, films or media files. We are not responsible for the accuracy, compliance, copyright, legality, decency, or any other aspect of the content of other linked sites. If you have any legal issues please contact the appropriate media file owners or host sites.",
+        SOURCE: "https://github.com/Inside4ndroid/TMDB-Embed-API"
     });
 });
 
-app.get('/embedsu/:tmdbId', async (req, res) => {
-    const id = req.params.tmdbId;
-    const season = req.query.s;
-    const episode = req.query.e;
+app.get('/movie/:tmdbId', async (req, res) => {
+    if (isNaN(parseInt(req.params.tmdbId))) {
+        res.status(405).json({
+            error: "Invalid movie id",
+            hint: "Check the documentation again to see how to use this endpoint"
+        });
+        return;
+    }
 
-    try {
-        if (season && episode) {
-            const vidsrcresponse = await getEmbedSu(id, season, episode);
-            res.status(200).json(vidsrcresponse);
-        } else {
-            const vidsrcresponse = await getEmbedSu(id);
-            res.status(200).json(vidsrcresponse);
-        }
-    } catch (error) {
-        console.error('Error fetching data:', error);
-        res.status(500).json({ error: 'Failed to fetch data' });
+    const media = await getMovieFromTmdb(req.params.tmdbId);
+
+    if (media instanceof Error) {
+        res.status(405).json({ error: media.message });
+        return;
+    }
+
+    let output = await getMovie(media);
+
+    if (output === null || output instanceof Error) {
+        res.status(404).json({
+            error: "No sources fond for this movie.",
+            hint: "If you know where to find this movie and know programming feel free to join us on GitHub: https://github.com/Inside4ndroid/TMDB-Embed-API to add it."
+        });
+    } else {
+        res.status(200).json(output);
     }
 });
 
-app.get('/2embed/:tmdbId', async (req, res) => {
-    const id = req.params.tmdbId;
-    const season = req.query.s;
-    const episode = req.query.e;
+app.get('/movie/:provider/:tmdbId', async (req, res) => {
+    const allowedProviders = ['2embed', 'autoembed', 'embedsu', 'vidsrcsu'];
+    if (!allowedProviders.includes(req.params.provider)) {
+        res.status(400).json({
+            error: "Invalid provider",
+            hint: `Provider must be one of: ${allowedProviders.join(', ')}`
+        });
+        return;
+    }
 
-    try {
-        if (season && episode) {
-            const vidsrcresponse = await getTwoEmbed(id, season, episode);
-            res.status(200).json(vidsrcresponse);
-        } else {
-            const vidsrcresponse = await getTwoEmbed(id, 0, 0);
-            res.status(200).json(vidsrcresponse);
-        }
-    } catch (error) {
-        console.error('Error fetching data:', error);
-        res.status(500).json({ error: 'Failed to fetch data' });
+    if (isNaN(parseInt(req.params.tmdbId))) {
+        res.status(400).json({
+            error: "Invalid movie id",
+            hint: "Check the documentation again to see how to use this endpoint"
+        });
+        return;
+    }
+
+    const media = await getMovieFromTmdb(req.params.tmdbId);
+
+    if (media instanceof Error) {
+        res.status(405).json({ error: media.message });
+        return;
+    }
+
+    let output = await getMovie(media, req.params.provider);
+
+    if (output === null || output instanceof Error) {
+        res.status(404).json({
+            error: "No sources fond for this movie.",
+            hint: "If you know where to find this movie and know programming feel free to join us on GitHub: https://github.com/Inside4ndroid/TMDB-Embed-API to add it."
+        });
+    } else {
+        res.status(200).json(output);
     }
 });
 
-app.get('/combined/:tmdbId', async (req, res) => {
-    const id = req.params.tmdbId;
-    const season = req.query.s;
-    const episode = req.query.e;
+app.get('/tv/:tmdbId', async (req, res) => {
+    if (!req.params.tmdbId || isNaN(parseInt(req.params.tmdbId)) || !req.query.s || isNaN(parseInt(req.query.s)) || !req.query.e || isNaN(parseInt(req.query.e))) {
+        res.status(405).json({
+            error: "Invalid show id, season, or episode number",
+            hint: "Check the documentation again to see how to use this endpoint"
+        });
+        return;
+    }
 
-    try {
-        let embedSuResponse;
-        let twoEmbedResponse;
+    const media = await getTvFromTmdb(req.params.tmdbId, req.query.s, req.query.e);
 
-        if (season && episode) {
-            embedSuResponse = await getEmbedSu(id, season, episode);
-            twoEmbedResponse = await getTwoEmbed(id, season, episode);
-        } else {
-            embedSuResponse = await getEmbedSu(id);
-            twoEmbedResponse = await getTwoEmbed(id, 0, 0);
-        }
+    if (media instanceof Error) {
+        res.status(405).json({ error: media.message });
+        return;
+    }
 
-        const combinedResponse = {
-            embedsu: embedSuResponse,
-            twoembed: twoEmbedResponse,
-        };
+    let output = await getTv(media, req.query.s, req.query.e);
 
-        res.status(200).json(combinedResponse);
-    } catch (error) {
-        console.error('Error fetching data:', error);
-        res.status(500).json({ error: 'Failed to fetch data' });
+    if (output === null || output instanceof Error) {
+        res.status(404).json({
+            error: "No sources found for this show.",
+            hint: "If you know where to find this show and know programming feel free to join us on GitHub: https://github.com/Inside4ndroid/TMDB-Embed-API to add it."
+        });
+    } else {
+        res.status(200).json(output);
     }
 });
 
-app.listen(port, () => {
-    console.log(`Api listening on port http://localhost:${port}`);
+app.get('/tv/:provider?/:tmdbId', async (req, res) => {
+    const allowedProviders = ['2embed', 'autoembed', 'embedsu', 'vidsrcsu'];
+    if (!allowedProviders.includes(req.params.provider)) {
+        res.status(400).json({
+            error: "Invalid provider",
+            hint: `Provider must be one of: ${allowedProviders.join(', ')}`
+        });
+        return;
+    }
+
+    if (isNaN(parseInt(req.params.tmdbId))) {
+        res.status(400).json({
+            error: "Invalid show id",
+            hint: "Check the documentation again to see how to use this endpoint",
+        });
+        return;
+    }
+
+    if (!req.query.s || isNaN(parseInt(req.query.s)) || !req.query.e || isNaN(parseInt(req.query.e))) {
+        return res.status(400).json({
+            error: "Invalid season, or episode number",
+            hint: "Check the documentation again to see how to use this endpoint"
+        });
+    }
+
+    const media = await getTvFromTmdb(req.params.tmdbId, req.query.s, req.query.e);
+
+    if (media instanceof Error) {
+        return res.status(405).json({ error: media.message });
+    }
+
+    let output = await getTv(media, req.query.s, req.query.e, req.params.provider);
+
+    if (output === null || output instanceof Error) {
+        return res.status(404).json({
+            error: "No sources found for this show.",
+            hint: "If you know where to find this show and know programming feel free to join us on GitHub: https://github.com/Inside4ndroid/TMDB-Embed-API to add it."
+        });
+    }
+
+    return res.status(200).json(output);
+});
+
+app.get('/movie/', (req, res) => {
+    res.status(405).json({
+        error: "Invalid movie id",
+        hint: "Check the documentation again to see how to use this endpoint"
+    });
+});
+
+app.get('/tv/', (req, res) => {
+    res.status(405).json({
+        error: "Invalid show id",
+        hint: "Check the documentation again to see how to use this endpoint"
+    });
+});
+
+app.get('*', (req, res) => {
+    res.status(404).json({ error: 'Not found', hint: 'Go to /' });
+});
+
+app.listen(PORT, () => {
+    console.log(`Server is running on port http://localhost:${PORT}`);
 });
