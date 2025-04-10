@@ -1,10 +1,4 @@
 # 🍿🎥✮⋆˙ TMDB Embed API! 🍿🎥✮⋆˙
-## ℹ️ Current Embed Providers ℹ️
-
-1. embedsu
-2. 2embed
-3. autoembed
-4. vidsrcsu
 
 Hello! I'm Inside4ndroid, a passionate Software Developer.
 
@@ -12,6 +6,13 @@ Hello! I'm Inside4ndroid, a passionate Software Developer.
 - 🌱 Currently in a state that works and is recieving updates.
 
 ---
+
+## ℹ️ Current Embed Providers ℹ️
+
+1. embedsu
+2. 2embed
+3. autoembed
+4. vidsrcsu
 
 ## 🤝 Sponsorship / Donations 🤝
 
