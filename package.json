@@ -7,27 +7,14 @@
   "type": "module",
   "main": "index.js",
   "scripts": {
-    "test:ci": "cross-env NODE_OPTIONS=--experimental-vm-modules jest --detectOpenHandles --forceExit --ci --testTimeout=30000 --reporters=default --reporters=jest-junit",
-    "test": "cross-env NODE_OPTIONS=--experimental-vm-modules jest --detectOpenHandles",
-    "test:watch": "cross-env NODE_OPTIONS=--experimental-vm-modules jest --watch",
-    "test:debug": "cross-env NODE_OPTIONS='--experimental-vm-modules --inspect-brk' jest --runInBand",
-    "dev": "node --watch index.js",
-    "start": "node index.js"
+    "start": "node --watch index.js"
   },
   "dependencies": {
     "cheerio": "^1.0.0",
     "cors": "^2.8.5",
     "dotenv": "^16.4.7",
     "express": "^4.18.2",
+    "fetch": "^1.1.0",
     "node-fetch": "^3.3.2"
-  },
-  "devDependencies": {
-    "@babel/core": "^7.26.10",
-    "@babel/preset-env": "^7.26.9",
-    "cross-env": "^7.0.3",
-    "jest-junit": "^15.0.0",
-    "jest": "^29.7.0",
-    "supertest": "^7.1.0",
-    "jest-extended": "^3.2.4"
   }
 }
