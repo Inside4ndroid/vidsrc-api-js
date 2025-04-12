@@ -24,34 +24,11 @@ jobs:
     
     - run: npm ci
 
-    # Optional: Start your app if needed
-    # - name: Start API
-    #   run: npm run start &
-
-    - name: Wait for API to be ready
-      run: |
-        timeout 60 bash -c 'while [[ "$(curl -s -o /dev/null -w ''%{http_code}'' http://localhost:3000)" != "200" ]]; do sleep 1; done'
-
     - name: Run Tests
       run: npm run test:ci
-
-    # - name: Upload test results
-    #   if: always()
-    #   uses: actions/upload-artifact@v3.1.3
-    #   with:
-    #     name: jest-test-results-${{ matrix.node-version }}
-    #     path: test-results/junit.xml
 
     # Optional: Show test output log (if you use one)
     - name: Show test log
       if: always()
       run: |
         cat jest.log || echo "No jest.log found"
-
-    # Optional: Upload log as artifact for debugging
-    # - name: Upload jest log
-    #   if: always()
-    #   uses: actions/upload-artifact@v3.1.3
-    #   with:
-    #     name: jest-log-${{ matrix.node-version }}
-    #     path: jest.log
