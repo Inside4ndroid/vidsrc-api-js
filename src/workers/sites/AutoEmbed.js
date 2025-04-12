@@ -14,7 +14,7 @@ function createErrorObject(errorMessage) {
         ERROR: [{
             error: `ERROR`,
             what_happened: errorMessage,
-            report_issue: 'https://github.com/Inside4ndroid/vidsrc-api-js/issues'
+            report_issue: 'https://github.com/Inside4ndroid/TMDB-Embed-API/issues'
         }]
     };
 };
