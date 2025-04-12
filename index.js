@@ -177,6 +177,8 @@ app.get('*', (req, res) => {
     res.status(404).json({ error: 'Not found', hint: 'Go to /' });
 });
 
-app.listen(PORT, () => {
+export const server = app.listen(PORT, () => {
     console.log(`Server is running on port http://localhost:${PORT}`);
 });
+
+export default app;
