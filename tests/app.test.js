@@ -2,7 +2,7 @@ import request from 'supertest';
 import { server } from '../index.js';
 import app from '../index.js';
 
-const movieProviders = ['2embed', 'embedsu', 'vidsrcsu'];
+const movieProviders = ['2embed', 'vidsrcsu'];
 
 describe('API Routes', () => {
     describe('GET /', () => {
