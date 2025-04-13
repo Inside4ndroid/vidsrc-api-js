@@ -14,7 +14,7 @@ export async function getMovieFromTmdb(tmdb_id) {
         let info = {
             type: "movie",
             title: data.original_title,
-            releaseYear: Number(data.release_date.split("-")[0]),
+            releaseYear: data.release_date ? Number(data.release_date.split("-")[0]) : null,
             tmdbId: tmdb_id,
             imdbId: data.imdb_id
         }
@@ -38,7 +38,7 @@ export async function getTvFromTmdb(tmdb_id, season, episode) {
         let info = {
             type: "tv",
             title: title,
-            releaseYear: data.air_date.split("-")[0],
+            releaseYear: data.air_date ? data.air_date.split("-")[0] : null,
             tmdbId: tmdb_id,
             imdbId: data.external_ids.imdb_id,
             season: season,
